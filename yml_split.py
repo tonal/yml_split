@@ -16,7 +16,6 @@ def main(opts, uris):
     (fname, ext) = osp.splitext(fname)
     ext = ext[1:]
     templ = opts.templ.replace('%fname', fname).replace('%ext', ext)
-    #logging.info('uri: %s, fname: %s, ext: %s, templ: %s', uri, fname, ext, templ)
     #save_xml(tree, templ, 0)
     split_loop(opts, tree, offers, templ)
 
@@ -74,7 +73,7 @@ def __parse_opt():
   #  help="tag for split [default: %default]")
   parser.add_option(
     "-n", "--num", dest="num", type='int', default=2000,
-    help="ignore processed urls (in out csv) [default: %default]")
+    help="num offer in output file [default: %default]")
   parser.add_option(
     "-f", "--ftempl", dest="templ", default="%fname.%d.%ext",
     help="template for output file names [default: %default]")
