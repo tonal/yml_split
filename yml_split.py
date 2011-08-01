@@ -1,12 +1,31 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 u'''
-Разбиение XML-я на куски
+Разбиение файлов XML формата Яндекс.Маркет на куски по указанномк количеству
+записей о товарных позициях.
+
+Copyright (C) 2011  Alexandr N. Zamaraev (aka tonal)
+
+This program is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with this program.  If not, see <http://www.gnu.org/licenses/>.
 '''
+
 from copy import deepcopy
 import logging
 from optparse import OptionParser
 import os.path as osp
+import sys
+
 from lxml import etree
 
 def main(opts, uris):
@@ -86,8 +105,14 @@ def __parse_opt():
   parser.add_option(
     '-v', '--verbose', action='store_true', dest='verbose', default=False,
     help='print verbose status messages to stdout')
+  parser.add_option(
+    '', '--version', action='store_true', dest='version', default=False,
+    help='print version and license to stdout')
   (options, args) = parser.parse_args()
   return options, args
+
+def print_version():
+  print 'License GPLv3+: GNU GPL version 3 or later <http://gnu.org/licenses/gpl.html>'
 
 def __init_log(opts):
   u'Настройка лога'
@@ -108,7 +133,10 @@ def __init_log(opts):
 
 if __name__ == '__main__':
   opts, args = __parse_opt()
-  __init_log(opts)
-  if not args:
-    args = ['yml.xml']
-  main(opts, args)
+  if opts.version:
+    print_version()
+  else:
+    __init_log(opts)
+    if not args:
+      args = ['yml.xml']
+    main(opts, args)
