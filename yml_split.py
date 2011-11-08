@@ -39,26 +39,39 @@ def main(opts, uris):
     split_loop(opts, tree, categs, offers, templ)
 
 def split_loop(opts, tree, categs, offers, templ):
-  new_tree, new_categs, new_offers = copy_new(tree)
+  map_categs = dict((ca.get('id'), ca) for ca in categs)
+  add_categs = set(()) if opts.strip else set(map_categs)
   num = opts.num
   cnt = 0
   all_cnt = len(offers)
   saved_cnt = 0
+  new_tree, new_categs, new_offers = copy_new(tree)
   offer = offers.find('offer')
   while offer is not None:
     cnt += 1
     saved_cnt += 1
     new_offers.append(offer)
+    ca_id = offer.find('categoryId').text
+    ca = map_categs.get(ca_id)
+    while ca is not None:
+      ca_id = ca.get('id')
+      if ca_id not in add_categs:
+        add_categs.add(ca_id)
+        pid = ca.get('parentId')
+        ca = map_categs.get(pid)
+      else:
+        ca = None
     if cnt % num == 0:
-      # Копирование используемых категорий
+      copy_categs(new_categs, categs, add_categs)
       save_xml(new_tree, templ % (cnt // num))
       logging.info('save %d from %d to %s', saved_cnt, all_cnt, templ % (cnt // num))
       new_tree, new_categs, new_offers = copy_new(tree)
       saved_cnt = 0
+      add_categs = set(()) if opts.strip else set(map_categs)
       all_cnt = len(offers)
     offer = offers.find('offer')
   if cnt % num != 0:
-    # Копирование используемых категорий
+    copy_categs(new_categs, categs, add_categs)
     save_xml(new_tree, templ % (cnt // num))
     logging.info('save %d from %d to %s', saved_cnt, all_cnt, templ % (cnt // num))
 
@@ -88,6 +101,11 @@ def copy_new(tree):
   new_categs = root.find('shop/categories')
   return new_tree, new_categs, new_offers
 
+def copy_categs(new_categs, categs, add_categs):
+  for ca in categs:
+    if ca.get('id') in add_categs:
+      new_categs.append(deepcopy(ca))
+
 def save_xml(tree, name):
   datas = etree.tostring(
     tree, pretty_print=True, encoding='utf-8', xml_declaration=True)
@@ -102,8 +120,8 @@ def __parse_opt():
     "-n", "--num", dest="num", type='int', default=2000,
     help="num offer in output file [default: %default]")
   parser.add_option(
-    "-s", "--strip", action="store_true", dest="strip", default=False,
-    help="strip unused categories [default: %default]")
+    "--no-strip", action="store_false", dest="strip", default=True,
+    help="no strip unused categories [default: False]")
   parser.add_option(
     "-f", "--ftempl", dest="templ", default="%fname.%d.%ext",
     help="template for output file names [default: %default]")
