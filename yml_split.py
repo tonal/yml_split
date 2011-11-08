@@ -30,16 +30,16 @@ from lxml import etree
 
 def main(opts, uris):
   for uri in uris:
-    tree, offers = load_xml(uri)
+    tree, categs, offers = load_xml(uri)
     fname = osp.basename(uri)
     (fname, ext) = osp.splitext(fname)
     ext = ext[1:]
     templ = opts.templ.replace('%fname', fname).replace('%ext', ext)
     #save_xml(tree, templ, 0)
-    split_loop(opts, tree, offers, templ)
+    split_loop(opts, tree, categs, offers, templ)
 
-def split_loop(opts, tree, offers, templ):
-  new_tree, new_offers = copy_new(tree)
+def split_loop(opts, tree, categs, offers, templ):
+  new_tree, new_categs, new_offers = copy_new(tree)
   num = opts.num
   cnt = 0
   all_cnt = len(offers)
@@ -50,13 +50,15 @@ def split_loop(opts, tree, offers, templ):
     saved_cnt += 1
     new_offers.append(offer)
     if cnt % num == 0:
+      # Копирование используемых категорий
       save_xml(new_tree, templ % (cnt // num))
       logging.info('save %d from %d to %s', saved_cnt, all_cnt, templ % (cnt // num))
-      new_tree, new_offers = copy_new(tree)
+      new_tree, new_categs, new_offers = copy_new(tree)
       saved_cnt = 0
       all_cnt = len(offers)
     offer = offers.find('offer')
   if cnt % num != 0:
+    # Копирование используемых категорий
     save_xml(new_tree, templ % (cnt // num))
     logging.info('save %d from %d to %s', saved_cnt, all_cnt, templ % (cnt // num))
 
@@ -64,21 +66,27 @@ def load_xml(uri):
   tree = etree.parse(uri) #'http://epool.ru/include/cash/yml.xml')
   logging.info('parsed: %s', uri)
   root = tree.getroot()
-  offers = root.find('shop/offers')
-  shop = offers.getparent()
-  shop.remove(offers)
+  categs = remove_from_tree(root, 'categories')
+  offers = remove_from_tree(root, 'offers')
+  return tree, categs, offers
+
+def remove_from_tree(root, tag):
+  tags = root.find('shop/%s' % tag)
+  shop = tags.getparent()
+  shop.remove(tags)
   shop.text = u'\n'
-  shop.append(etree.Element('offers'))
-  noffs = shop.find('offers')
-  noffs.text = u'\n'
-  noffs.tail = u'\n'
-  return tree, offers
+  shop.append(etree.Element(tag))
+  ntags = shop.find(tag)
+  ntags.text = u'\n'
+  ntags.tail = u'\n'
+  return tags
 
 def copy_new(tree):
   new_tree = deepcopy(tree)
   root = new_tree.getroot()
   new_offers = root.find('shop/offers')
-  return new_tree, new_offers
+  new_categs = root.find('shop/categories')
+  return new_tree, new_categs, new_offers
 
 def save_xml(tree, name):
   datas = etree.tostring(
@@ -93,6 +101,9 @@ def __parse_opt():
   parser.add_option(
     "-n", "--num", dest="num", type='int', default=2000,
     help="num offer in output file [default: %default]")
+  parser.add_option(
+    "-s", "--strip", action="store_true", dest="strip", default=False,
+    help="strip unused categories [default: %default]")
   parser.add_option(
     "-f", "--ftempl", dest="templ", default="%fname.%d.%ext",
     help="template for output file names [default: %default]")
