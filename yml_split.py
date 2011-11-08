@@ -4,7 +4,7 @@ u'''
 Разбиение файлов XML формата Яндекс.Маркет на куски по указанномк количеству
 записей о товарных позициях.
 
-Copyright (C) 2011  Alexandr N. Zamaraev (aka tonal)
+Copyright (C) 2011  Alexandr N. Zamaraev (aka tonal) tonal@promsoft.ru
 
 This program is free software: you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
